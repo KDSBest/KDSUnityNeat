@@ -6,18 +6,50 @@ using UnityEngine;
 
 namespace KDS.Neat
 {
-    public class Genome : ICloneable, IComparer<NodeGene>
+    public class Genome : ICloneable
     {
-        public float Fitness;
-        public Dictionary<int, ConnectionGene> Connections;
-        public Dictionary<int, NodeGene> Nodes;
+        public float Fitness = 0.0f;
+        private Dictionary<int, ConnectionGene> connections = new Dictionary<int, ConnectionGene>();
+        private Dictionary<int, List<int>> connectionsAlreadyExistsCache = new Dictionary<int, List<int>>();
+
+        public Dictionary<int, NodeGene> Nodes = new Dictionary<int, NodeGene>();
         public int Generation = 1;
         public int Id = 0;
 
-        public Genome()
+        public IReadOnlyDictionary<int, ConnectionGene> GetConnections()
         {
-            this.Connections = new Dictionary<int, ConnectionGene>();
-            this.Nodes = new Dictionary<int, NodeGene>();
+            return this.connections;
+        }
+
+        public void AddConnection(ConnectionGene gene)
+        {
+            if (!this.connections.ContainsKey(gene.Innovation))
+            {
+                this.connections.Add(gene.Innovation, gene);
+
+                int lowKey = Math.Min(gene.InNode, gene.OutNode);
+                int highKey = Math.Max(gene.InNode, gene.OutNode);
+
+                if (!connectionsAlreadyExistsCache.ContainsKey(lowKey))
+                {
+                    connectionsAlreadyExistsCache.Add(lowKey, new List<int>());
+                }
+
+                connectionsAlreadyExistsCache[lowKey].Add(highKey);
+            }
+        }
+
+        private bool ExistsConnection(int inNode, int outNode)
+        {
+            int lowKey = Math.Min(inNode, outNode);
+            int highKey = Math.Max(inNode, outNode);
+
+            if (!connectionsAlreadyExistsCache.ContainsKey(lowKey))
+            {
+                return false;
+            }
+
+            return connectionsAlreadyExistsCache[lowKey].Contains(highKey);
         }
 
         public void AddConnectionMutation(INeatConfiguration configuration, IRandomizer randomizer, IInnovationCounter innovationCounter)
@@ -50,32 +82,21 @@ namespace KDS.Neat
                 reverse = true;
             }
 
-            // TODO: Use Dictionary as cache
-            foreach (var con in Connections.Values)
+            if (ExistsConnection(node1.Id, node2.Id))
             {
-                if (con.InNode == node1.Id && con.OutNode == node2.Id)
-                {
-                    return;
-                }
-
-                if (con.OutNode == node1.Id && con.InNode == node2.Id)
-                {
-                    return;
-                }
+                return;
             }
 
             float weight = randomizer.GetRandom(configuration.MinimumGeneratedWeight, configuration.MaximumGeneratedWeight);
             int innvoationNumber = innovationCounter.GetConnectionInnovation();
-            this.Connections.Add(innvoationNumber,
-                new ConnectionGene(reverse ? node2.Id : node1.Id, reverse ? node1.Id : node2.Id, weight, true,
-                    innvoationNumber));
+            this.AddConnection(new ConnectionGene(reverse ? node2.Id : node1.Id, reverse ? node1.Id : node2.Id, weight, true, innvoationNumber));
         }
 
         public void AddNodeMutation(IRandomizer randomizer, IInnovationCounter innovationCounter)
         {
-            var keys = Connections.Keys.ToList();
-            int connectionIndex = keys[randomizer.GetRandom(Connections.Count)];
-            ConnectionGene con = Connections[connectionIndex];
+            var keys = connections.Keys.ToList();
+            int connectionIndex = keys[randomizer.GetRandom(connections.Count)];
+            ConnectionGene con = connections[connectionIndex];
 
             NodeGene inNode = Nodes[con.InNode];
             NodeGene outNode = Nodes[con.OutNode];
@@ -85,12 +106,10 @@ namespace KDS.Neat
             NodeGene newNode = new NodeGene(NodeGeneType.Hidden, innovationCounter.GetNodeGeneInnovation());
             Nodes.Add(newNode.Id, newNode);
 
-            ConnectionGene inToNew =
-                new ConnectionGene(inNode.Id, newNode.Id, 1, true, innovationCounter.GetConnectionInnovation());
-            ConnectionGene newToOut = new ConnectionGene(newNode.Id, outNode.Id, con.Weight, true,
-                innovationCounter.GetConnectionInnovation());
-            Connections.Add(inToNew.Innovation, inToNew);
-            Connections.Add(newToOut.Innovation, newToOut);
+            ConnectionGene inToNew = new ConnectionGene(inNode.Id, newNode.Id, 1, true, innovationCounter.GetConnectionInnovation());
+            ConnectionGene newToOut = new ConnectionGene(newNode.Id, outNode.Id, con.Weight, true, innovationCounter.GetConnectionInnovation());
+            AddConnection(inToNew);
+            AddConnection(newToOut);
         }
 
         public Genome Crossover(INeatConfiguration configuration, IRandomizer randomizer, IInnovationCounter innovationCounter, Genome genome2)
@@ -126,33 +145,35 @@ namespace KDS.Neat
                 }
             }
 
-            foreach (var parent1Connection in parent1.Connections.Values)
+            var parent1Connections = parent1.GetConnections();
+            var parent2Connections = parent2.GetConnections();
+
+            foreach (var parent1Connection in parent1Connections.Values)
             {
-                if (parent2.Connections.ContainsKey(parent1Connection.Innovation))
+                if (parent2Connections.ContainsKey(parent1Connection.Innovation))
                 {
                     if (randomizer.GetRandomBool())
                     {
-                        child.Connections.Add(parent1Connection.Innovation, (ConnectionGene)parent1Connection.Clone());
+                        child.AddConnection((ConnectionGene)parent1Connection.Clone());
                     }
                     else // Disjoined or Excessed
                     {
-                        child.Connections.Add(parent1Connection.Innovation,
-                            (ConnectionGene)parent2.Connections[parent1Connection.Innovation].Clone());
+                        child.AddConnection((ConnectionGene)parent2Connections[parent1Connection.Innovation].Clone());
                     }
                 }
                 else
                 {
-                    child.Connections.Add(parent1Connection.Innovation, (ConnectionGene)parent1Connection.Clone());
+                    child.AddConnection((ConnectionGene)parent1Connection.Clone());
                 }
             }
 
             if (aboutTheSame)
             {
-                foreach (var parent2Connection in parent2.Connections.Values)
+                foreach (var parent2Connection in parent2Connections.Values)
                 {
-                    if (!parent1.Connections.ContainsKey(parent2Connection.Innovation)) // Disjoined or Excessed
+                    if (!parent1Connections.ContainsKey(parent2Connection.Innovation)) // Disjoined or Excessed
                     {
-                        child.Connections.Add(parent2Connection.Innovation, (ConnectionGene)parent2Connection.Clone());
+                        child.AddConnection((ConnectionGene)parent2Connection.Clone());
                     }
                 }
             }
@@ -162,7 +183,7 @@ namespace KDS.Neat
 
         public void Mutation(INeatConfiguration configuration, IRandomizer randomizer)
         {
-            foreach (var con in Connections.Values)
+            foreach (var con in connections.Values)
             {
                 if (randomizer.GetRandomPercentage() <= configuration.ProbabilityPertubing)
                 {
@@ -186,51 +207,14 @@ namespace KDS.Neat
             {
                 clone.Nodes.Add(keyVal.Key, keyVal.Value);
             }
-            foreach (var keyVal in this.Connections)
+
+            foreach (var keyVal in this.connections)
             {
-                clone.Connections.Add(keyVal.Key, keyVal.Value);
+                clone.AddConnection(keyVal.Value);
             }
 
             clone.Id = Id;
             return clone;
-        }
-
-        public List<NodeGene> CalculateValues(INeatConfiguration configuration, Dictionary<int, float> inputValues)
-        {
-            foreach (var nodeKeyValue in Nodes)
-            {
-                nodeKeyValue.Value.Value = 0;
-            }
-
-            foreach (var inputValue in inputValues)
-            {
-                Nodes[inputValue.Key].Value = inputValue.Value;
-            }
-
-            for (int i = 0; i < configuration.MaxNetworkSolvingLoops; i++)
-            {
-                foreach (var con in Connections.Values)
-                {
-                    if (!con.Expressed)
-                    {
-                        continue;
-                    }
-
-                    var inNode = Nodes[con.InNode];
-                    var outNode = Nodes[con.OutNode];
-                    outNode.Value += inNode.Value * con.Weight;
-                }
-            }
-
-            var nodes = Nodes.Values.Where(x => x.Type == NodeGeneType.Output).ToList();
-            nodes.Sort(this);
-
-            return nodes;
-        }
-
-        public int Compare(NodeGene x, NodeGene y)
-        {
-            return x.Id.CompareTo(y.Id);
         }
     }
 }

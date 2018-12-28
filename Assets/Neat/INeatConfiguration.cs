@@ -35,31 +35,70 @@
 
         /// <summary>
         /// Gets the excess coeff.
+        ///
+        /// A normal Value is 1
         /// </summary>
         float ExcessCoeff { get; }
 
         /// <summary>
         /// Gets the disjoined coeff.
+        ///
+        /// A normal Value is 1
         /// </summary>
         float DisjoinedCoeff { get; }
 
         /// <summary>
         /// Gets the distance coeff.
+        ///
+        /// A normal Value is 0.4
         /// </summary>
         float DistanceCoeff { get; }
 
+        /// <summary>
+        /// Gets the mutation rate.
+        ///
+        /// A normal Value is 0.9
+        /// </summary>
         float MutationRate { get; }
 
+        /// <summary>
+        /// Gets the add connection rate.
+        ///
+        /// A Normal Value is 0.1
+        /// </summary>
         float AddConnectionRate { get; }
 
+        /// <summary>
+        /// Gets the add node rate.
+        ///
+        /// A normal Value is 0.1
+        /// </summary>
         float AddNodeRate { get; }
 
+        /// <summary>
+        /// Gets the same species distance.
+        ///
+        /// A normal Value is 3-10
+        /// </summary>
         float SameSpeciesDistance { get; }
 
+        /// <summary>
+        /// Gets the size of the population.
+        ///
+        /// A normal Value is 150 or as much as your computer can handle
+        /// </summary>
         int PopulationSize { get; }
 
+        /// <summary>
+        /// Gets the epsilon.
+        /// </summary>
         float Epsilon { get; }
 
-        int MaxNetworkSolvingLoops { get; }
-   }
+        /// <summary>
+        /// Gets the same species node ignore value.
+        ///
+        /// Normally a Value of 12 or 20
+        /// </summary>
+        int SameSpeciesNodeIgnoreValue { get; }
+    }
 }

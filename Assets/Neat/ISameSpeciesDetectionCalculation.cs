@@ -1,6 +1,6 @@
 ﻿namespace KDS.Neat
 {
-    public interface ISameSpecialCalculation
+    public interface ISameSpeciesDetectionCalculation
     {
         bool IsSameSpecies(INeatConfiguration configuration, Genome genome1, Genome genome2);
     }

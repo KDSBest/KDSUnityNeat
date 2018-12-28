@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using KDS.Neat;
+using KDS.Neat.Solver;
 using UnityEngine;
 using UnityEngine.SocialPlatforms;
 
@@ -16,6 +17,7 @@ public class SimulationBehaviour : MonoBehaviour
     public GameObject Player;
     public Genome Genome;
     public INeatConfiguration Configuration;
+    private GenomeSolver solver = new GenomeSolver();
 
     public void Start()
     {
@@ -88,7 +90,7 @@ public class SimulationBehaviour : MonoBehaviour
                 //     Go Up
                 //     Go Down
 
-                var outputs = Genome.CalculateValues(Configuration, new Dictionary<int, float>()
+                var outputs = solver.TraverseSolver(Genome, 1000, new Dictionary<int, float>()
                 {
                     {1, this.transform.position.x},
                     {2, this.transform.position.y},

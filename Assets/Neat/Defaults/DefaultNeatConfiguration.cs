@@ -69,7 +69,7 @@
         /// </summary>
         public float DistanceCoeff
         {
-            get { return 0.8f; }
+            get { return 0.4f; }
         }
 
         public float MutationRate
@@ -102,9 +102,9 @@
             get { return float.Epsilon; }
         }
 
-        public int MaxNetworkSolvingLoops
+        public int SameSpeciesNodeIgnoreValue
         {
-            get { return 4; }
+            get { return 20; }
         }
     }
 }

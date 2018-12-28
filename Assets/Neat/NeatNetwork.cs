@@ -14,9 +14,9 @@ namespace KDS.Neat
         private readonly IInnovationCounter innovationCounter;
         private readonly IRandomizer randomizer;
         public readonly INeatConfiguration Configuration;
-        private readonly ISameSpecialCalculation distanceFunc;
+        private readonly ISameSpeciesDetectionCalculation distanceFunc;
         private readonly ISpeciesBreedSelectionStrategy speciesBreedSelectionStrategy;
-        private int CurrentGeneration = 1;
+        public int CurrentGeneration = 1;
         public List<Genome> Genomes;
 
         public List<Species> Species;
@@ -24,13 +24,13 @@ namespace KDS.Neat
         public Genome FittestGenome;
 
         public NeatNetwork(int inNodes, int outNodes) : this(new DefaultNeatConfiguration(), new InnovationCounter(),
-            new DefaultRandomizer(), new DefaultSameSpecialCalculation(),
+            new DefaultRandomizer(), new DefaultSameSpeciesDetectionCalculation(),
             new SurvivalOfTheFittestBreedSelectionStrategy(), inNodes, outNodes)
         {
 
         }
 
-        public NeatNetwork(INeatConfiguration configuration, IInnovationCounter innovationCounter, IRandomizer randomizer, ISameSpecialCalculation distanceFunc, ISpeciesBreedSelectionStrategy speciesBreedSelectionStrategy, int inNodes, int outNodes)
+        public NeatNetwork(INeatConfiguration configuration, IInnovationCounter innovationCounter, IRandomizer randomizer, ISameSpeciesDetectionCalculation distanceFunc, ISpeciesBreedSelectionStrategy speciesBreedSelectionStrategy, int inNodes, int outNodes)
         {
             this.Configuration = configuration;
             this.innovationCounter = innovationCounter;
@@ -70,7 +70,7 @@ namespace KDS.Neat
                 for (int inIndex = 0; inIndex < inNodes; inIndex++)
                 {
                     int conId = this.innovationCounter.GetConnectionInnovation();
-                    startingGenome.Connections.Add(conId, new ConnectionGene(inNodesTemp[inIndex].Id, id, 0.5f, true, conId));
+                    startingGenome.AddConnection(new ConnectionGene(inNodesTemp[inIndex].Id, id, 0.5f, true, conId));
                 }
             }
 
@@ -197,7 +197,7 @@ namespace KDS.Neat
             return Species[Species.Count - 1];
         }
 
-        private void SortGenomesIntoSpecies(INeatConfiguration configuration, ISameSpecialCalculation distanceFunc)
+        private void SortGenomesIntoSpecies(INeatConfiguration configuration, ISameSpeciesDetectionCalculation distanceFunc)
         {
             foreach (var g in Genomes)
             {
