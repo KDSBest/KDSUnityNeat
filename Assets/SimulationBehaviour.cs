@@ -10,6 +10,7 @@ public class SimulationBehaviour : MonoBehaviour
     public Vector2 Direction;
     public Vector2 Position = Vector2.zero;
     public float Speed = 10;
+    public float PlayerSpeed = 5;
     public bool Done = false;
     public float Fitness = 0;
     public GameObject PlayerPrefab;
@@ -43,7 +44,7 @@ public class SimulationBehaviour : MonoBehaviour
         {
             if (!Done)
             {
-                Fitness += Time.deltaTime;
+                Fitness += Time.deltaTime * 100;
                 Position += Direction * Speed * Time.deltaTime;
 
                 if (Position.x < -9)
@@ -90,7 +91,7 @@ public class SimulationBehaviour : MonoBehaviour
                 //     Go Up
                 //     Go Down
 
-                var outputs = solver.TraverseSolver(Genome, 1000, new Dictionary<int, float>()
+                var outputs = solver.TraverseSolver(Genome, 100, new Dictionary<int, float>()
                 {
                     {1, this.transform.position.x},
                     {2, this.transform.position.y},
@@ -103,7 +104,7 @@ public class SimulationBehaviour : MonoBehaviour
                 if (outputs[0].Value >= 1.0f)
                 {
                     float y = this.Player.transform.position.y;
-                    y -= Speed * Time.deltaTime;
+                    y -= PlayerSpeed * Time.deltaTime;
 
                     if (y < -10 + playerSizeHalf)
                     {
@@ -117,7 +118,7 @@ public class SimulationBehaviour : MonoBehaviour
                 if (outputs[1].Value >= 1.0f)
                 {
                     float y = this.Player.transform.position.y;
-                    y += Speed * Time.deltaTime;
+                    y += PlayerSpeed * Time.deltaTime;
 
                     if (y > 10 - playerSizeHalf)
                     {

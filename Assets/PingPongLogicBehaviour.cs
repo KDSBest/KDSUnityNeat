@@ -5,8 +5,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using KDS.Neat;
-using KDS.Neat.Defaults;
-using KDS.Neat.KillGenomesStrategies;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -47,7 +45,7 @@ namespace KDS
                     currentInformationText = string.Format(
                         "Current Generation: {0}\r\nHighest Fitness of Current Network: {1}\r\nHighest Fitness Generation: {2}\r\nSpecies Count: {3}",
                         neat.CurrentGeneration, neat.FittestGenome.Fitness, neat.FittestGenome.Generation,
-                        neat.Species.Count);
+                        neat.Specieses.Count);
                     if (GenomeRenderer != null)
                     {
                         GenomeRenderer.Genome = neat.FittestGenome;

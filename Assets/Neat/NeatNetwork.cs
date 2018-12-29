@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading.Tasks;
+using KDS.Neat.BreedingSelectionStrategies;
 using KDS.Neat.Defaults;
-using KDS.Neat.KillGenomesStrategies;
-using UnityEngine.Experimental.PlayerLoop;
 
 namespace KDS.Neat
 {
@@ -15,22 +15,22 @@ namespace KDS.Neat
         private readonly IRandomizer randomizer;
         public readonly INeatConfiguration Configuration;
         private readonly ISameSpeciesDetectionCalculation distanceFunc;
-        private readonly ISpeciesBreedSelectionStrategy speciesBreedSelectionStrategy;
+        private readonly IBreedingSelectionStrategy speciesBreedSelectionStrategy;
         public int CurrentGeneration = 1;
         public List<Genome> Genomes;
 
-        public List<Species> Species;
+        public List<Species> Specieses;
 
         public Genome FittestGenome;
 
         public NeatNetwork(int inNodes, int outNodes) : this(new DefaultNeatConfiguration(), new InnovationCounter(),
             new DefaultRandomizer(), new DefaultSameSpeciesDetectionCalculation(),
-            new SurvivalOfTheFittestBreedSelectionStrategy(), inNodes, outNodes)
+            new SurvivalOfTheFittest50PercentOfAllGenomesBreedingSelectionStrategy(), inNodes, outNodes)
         {
 
         }
 
-        public NeatNetwork(INeatConfiguration configuration, IInnovationCounter innovationCounter, IRandomizer randomizer, ISameSpeciesDetectionCalculation distanceFunc, ISpeciesBreedSelectionStrategy speciesBreedSelectionStrategy, int inNodes, int outNodes)
+        public NeatNetwork(INeatConfiguration configuration, IInnovationCounter innovationCounter, IRandomizer randomizer, ISameSpeciesDetectionCalculation distanceFunc, IBreedingSelectionStrategy speciesBreedSelectionStrategy, int inNodes, int outNodes)
         {
             this.Configuration = configuration;
             this.innovationCounter = innovationCounter;
@@ -38,13 +38,17 @@ namespace KDS.Neat
             this.distanceFunc = distanceFunc;
             this.speciesBreedSelectionStrategy = speciesBreedSelectionStrategy;
             Genomes = new List<Genome>();
-            Species = new List<Species>();
+            Specieses = new List<Species>();
 
             var startingGenome = GenerateStartingGenome(inNodes, outNodes);
 
             Genomes.Add((Genome)startingGenome.Clone());
-            Species.Add(new Species(Genomes[0]));
-            BreedNextGeneration();
+            Specieses.Add(new Species(Genomes[0]));
+
+            if (Genomes.Count < configuration.PopulationSize)
+            {
+                BreedNextGeneration();
+            }
         }
 
         private Genome GenerateStartingGenome(int inNodes, int outNodes)
@@ -81,7 +85,7 @@ namespace KDS.Neat
         {
             Reset(randomizer);
 
-            SortGenomesIntoSpecies(Configuration, distanceFunc);
+            Species.SortGenomesIntoSpecies(Configuration, distanceFunc, Genomes, Specieses);
 
             calculateFitnessForGenomes(Genomes);
 
@@ -100,127 +104,55 @@ namespace KDS.Neat
         public void BreedNextGeneration()
         {
             List<Genome> nextGenerationGenomes = new List<Genome>();
-            float completeWeightForSpecies = 0;
-            foreach (var s in Species)
-            {
-                s.CalculateFitness();
-                completeWeightForSpecies += s.Fitness;
-                nextGenerationGenomes.AddRange(speciesBreedSelectionStrategy.SelectGenomes(s));
-            }
 
+            nextGenerationGenomes.AddRange(speciesBreedSelectionStrategy.SelectGenomes(Specieses));
             CurrentGeneration++;
-            BreedGenomes(randomizer, Configuration, innovationCounter, nextGenerationGenomes, completeWeightForSpecies);
-
-            Genomes = nextGenerationGenomes;
+            Genomes = BreedGenomes(nextGenerationGenomes);
         }
 
         private void Reset(IRandomizer randomizer)
         {
-            foreach (var s in Species)
+            foreach (var s in Specieses)
             {
                 s.Reset(randomizer);
             }
         }
 
-        private void BreedGenomes(IRandomizer randomizer, INeatConfiguration configuration, IInnovationCounter innovationCounter, List<Genome> nextGenerationGenomes,
-            float completeWeightForSpecies)
+        private List<Genome> BreedGenomes(List<Genome> nextGenerationGenomes)
         {
-            while (nextGenerationGenomes.Count < configuration.PopulationSize)
+            List<Genome> breededGenomes = new List<Genome>(nextGenerationGenomes);
+
+            this.speciesBreedSelectionStrategy.PrepareSelectParents(Configuration, distanceFunc, nextGenerationGenomes);
+
+            while (breededGenomes.Count < Configuration.PopulationSize)
             {
-                Species s1 = GetRandomSpeciesBasedOnFitness(randomizer, completeWeightForSpecies);
-                Species s2 = GetRandomSpeciesBasedOnFitness(randomizer, completeWeightForSpecies);
+                var parents = this.speciesBreedSelectionStrategy.SelectParents(randomizer, nextGenerationGenomes);
 
-                Genome p1 = GetRandomGenomeBasedOnFitness(randomizer, s1);
-                Genome p2 = GetRandomGenomeBasedOnFitness(randomizer, s2);
+                var p1 = parents[0];
+                var p2 = parents[1];
 
-                Genome child = p1.Crossover(configuration, randomizer, innovationCounter, p2);
+                Genome child = p1.Crossover(Configuration, randomizer, innovationCounter, p2);
                 child.Generation = CurrentGeneration;
 
-                if (randomizer.GetRandomPercentage() <= configuration.MutationRate)
+                if (randomizer.GetRandomPercentage() <= Configuration.MutationRate)
                 {
-                    child.Mutation(configuration, randomizer);
+                    child.Mutation(Configuration, randomizer);
                 }
 
-                if (randomizer.GetRandomPercentage() <= configuration.AddConnectionRate)
+                if (randomizer.GetRandomPercentage() <= Configuration.AddConnectionRate)
                 {
-                    child.AddConnectionMutation(configuration, randomizer, innovationCounter);
+                    child.AddConnectionMutation(Configuration, randomizer, innovationCounter);
                 }
 
-                if (randomizer.GetRandomPercentage() <= configuration.AddNodeRate)
+                if (randomizer.GetRandomPercentage() <= Configuration.AddNodeRate)
                 {
                     child.AddNodeMutation(randomizer, innovationCounter);
                 }
 
-                nextGenerationGenomes.Add(child);
-            }
-        }
-
-        private Genome GetRandomGenomeBasedOnFitness(IRandomizer randomizer, Species s)
-        {
-            float completeWeight = 0;
-
-            foreach (var g in s.Genomes)
-            {
-                completeWeight += g.Fitness;
+                breededGenomes.Add(child);
             }
 
-            float r = randomizer.GetRandomPercentage() * completeWeight;
-            float countWeight = 0;
-
-            foreach (var g in s.Genomes)
-            {
-                countWeight += g.Fitness;
-
-                if (countWeight > r)
-                {
-                    return g;
-                }
-            }
-
-            return s.Genomes[s.Genomes.Count - 1];
-        }
-
-        private Species GetRandomSpeciesBasedOnFitness(IRandomizer randomizer, float completeWeight)
-        {
-            float r = randomizer.GetRandomPercentage() * completeWeight;
-            float countWeight = 0;
-
-            foreach (var s in Species)
-            {
-                countWeight += s.Fitness;
-
-                if (countWeight >= r)
-                {
-                    return s;
-                }
-            }
-
-            return Species[Species.Count - 1];
-        }
-
-        private void SortGenomesIntoSpecies(INeatConfiguration configuration, ISameSpeciesDetectionCalculation distanceFunc)
-        {
-            foreach (var g in Genomes)
-            {
-                bool foundSpecies = false;
-                foreach (var s in Species)
-                {
-                    if (distanceFunc.IsSameSpecies(configuration, g, s.Mascot))
-                    {
-                        s.Genomes.Add(g);
-                        foundSpecies = true;
-                        break;
-                    }
-                }
-
-                if (!foundSpecies)
-                {
-                    Species newSpecies = new Species(g);
-                    Species.Add(newSpecies);
-                }
-            }
-
-            Species.RemoveAll(x => x.Genomes.Count == 0);
+            return breededGenomes;
         }
     }
 }

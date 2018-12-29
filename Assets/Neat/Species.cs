@@ -44,5 +44,30 @@ namespace KDS.Neat
             this.Mascot = Genomes[newMascotIndex];
             this.Genomes.Clear();
         }
+
+        public static void SortGenomesIntoSpecies(INeatConfiguration configuration, ISameSpeciesDetectionCalculation distanceFunc, List<Genome> genomes, List<Species> specieses)
+        {
+            foreach (var g in genomes)
+            {
+                bool foundSpecies = false;
+                foreach (var s in specieses)
+                {
+                    if (distanceFunc.IsSameSpecies(configuration, g, s.Mascot))
+                    {
+                        s.Genomes.Add(g);
+                        foundSpecies = true;
+                        break;
+                    }
+                }
+
+                if (!foundSpecies)
+                {
+                    Species newSpecies = new Species(g);
+                    specieses.Add(newSpecies);
+                }
+            }
+
+            specieses.RemoveAll(x => x.Genomes.Count == 0);
+        }
     }
 }
