@@ -545,8 +545,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 273.5, y: 464.1}
-  m_SizeDelta: {x: 545.9, y: 928.1}
+  m_AnchoredPosition: {x: 349.7, y: 464.1}
+  m_SizeDelta: {x: 698.3, y: 928.1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1028441298
 MonoBehaviour:
@@ -586,7 +586,8 @@ MonoBehaviour:
     ball\n  (Same Speed NEAT Algorithm solved)\n\n- NEAT has no Idea of the Game\n\n-
     Node Setup\n  - 1: Ball X\n  - 2: Ball Y\n  - 3: Ball Direction X\n  - 4: Ball
     Direction Y\n  - 5: Player Y Min\n  - 6: Player Y Max\n  - 7: if > 1 go Up\n  -
-    8: if > 1 go Down\n  - Hidden Layer: NEAT\n\nSource: \n\nThanks KDSBest\n"
+    8: if > 1 go Down\n  - Hidden Layer: NEAT\n\nSource: https://github.com/KDSBest/KDSUnityNeat\n\nThanks
+    KDSBest\n\n\n"
 --- !u!222 &1028441299
 CanvasRenderer:
   m_ObjectHideFlags: 0
