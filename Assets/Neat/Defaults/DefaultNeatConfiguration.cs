@@ -89,12 +89,12 @@
 
         public float SameSpeciesDistance
         {
-            get { return 10; }
+            get { return 3; }
         }
 
         public int PopulationSize
         {
-            get { return 500; }
+            get { return 200; }
         }
 
         public float Epsilon

@@ -127,10 +127,11 @@ namespace KDS.Neat
         {
             while (nextGenerationGenomes.Count < configuration.PopulationSize)
             {
-                Species s = GetRandomSpeciesBasedOnFitness(randomizer, completeWeightForSpecies);
+                Species s1 = GetRandomSpeciesBasedOnFitness(randomizer, completeWeightForSpecies);
+                Species s2 = GetRandomSpeciesBasedOnFitness(randomizer, completeWeightForSpecies);
 
-                Genome p1 = GetRandomGenomeBasedOnFitness(randomizer, s);
-                Genome p2 = GetRandomGenomeBasedOnFitness(randomizer, s);
+                Genome p1 = GetRandomGenomeBasedOnFitness(randomizer, s1);
+                Genome p2 = GetRandomGenomeBasedOnFitness(randomizer, s2);
 
                 Genome child = p1.Crossover(configuration, randomizer, innovationCounter, p2);
                 child.Generation = CurrentGeneration;

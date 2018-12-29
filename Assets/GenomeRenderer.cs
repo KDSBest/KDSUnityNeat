@@ -22,7 +22,7 @@ public class GenomeRenderer : MonoBehaviour
 
         List<int> idsProcessed = new List<int>();
         Queue<NodeGene> nodesToProcess = new Queue<NodeGene>(genes.Where(x => x.Type == NodeGeneType.Input));
-        int maxLayer = 2;
+        int maxHiddenLayer = 1;
         foreach (var gene in genes)
         {
             layerInfo.Add(gene.Id, gene.Type == NodeGeneType.Input ? 1 : 2);
@@ -35,9 +35,10 @@ public class GenomeRenderer : MonoBehaviour
             int childLayer = layerInfo[node.Id] + 1;
             foreach (var con in connections.Where(x => x.InNode == node.Id))
             {
+                var outNode = genes.First(x => x.Id == con.OutNode);
                 if (!idsProcessed.Contains(con.OutNode))
                 {
-                    nodesToProcess.Enqueue(genes.First(x => x.Id == con.OutNode));
+                    nodesToProcess.Enqueue(outNode);
                 }
 
                 if (layerInfo.ContainsKey(con.OutNode))
@@ -52,16 +53,16 @@ public class GenomeRenderer : MonoBehaviour
                     layerInfo.Add(con.OutNode, childLayer);
                 }
 
-                if (childLayer > maxLayer)
+                if (childLayer > maxHiddenLayer && outNode.Type == NodeGeneType.Hidden)
                 {
-                    maxLayer = childLayer;
+                    maxHiddenLayer = childLayer;
                 }
             }
         }
 
         foreach (var gene in genes.Where(x => x.Type == NodeGeneType.Output))
         {
-            layerInfo[gene.Id] = maxLayer;
+            layerInfo[gene.Id] = maxHiddenLayer + 1;
         }
 
         return layerInfo;
