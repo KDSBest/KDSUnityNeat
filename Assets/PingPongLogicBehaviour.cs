@@ -36,15 +36,35 @@ namespace KDS
 
         public void Start()
         {
+            float highestFitnessEver = 0;
+            float highestAvgFitness = 0;
             Task.Run(() =>
             {
                 for (;;)
                 {
                     neat.Evaluate(SimulateNetwork);
+                    if (neat.FittestGenome.Fitness > highestFitnessEver)
+                    {
+                        highestFitnessEver = neat.FittestGenome.Fitness;
+                    }
+
+                    float avgFitness = 0;
+
+                    foreach (var genome in neat.Genomes)
+                    {
+                        avgFitness += genome.Fitness;
+                    }
+
+                    avgFitness /= neat.Genomes.Count;
+                    if (avgFitness > highestAvgFitness)
+                    {
+                        highestAvgFitness = avgFitness;
+                    }
+
                     currentInformationText = string.Format(
-                        "Current Generation: {0}\r\nHighest Fitness of Current Network: {1}\r\nHighest Fitness Generation: {2}\r\nSpecies Count: {3}",
+                        "Current Generation: {0}\r\nHighest Fitness of Current Network: {1}\r\nHighest Fitness Generation: {2}\r\nSpecies Count: {3}\r\nFittest Genome Fitness Ever: {4}\r\nAvg Fitness: {5}\r\nHighest Avg Fitness Ever: {6}",
                         neat.CurrentGeneration, neat.FittestGenome.Fitness, neat.FittestGenome.Generation,
-                        neat.Specieses.Count);
+                        neat.Specieses.Count, highestFitnessEver, avgFitness, highestAvgFitness);
                     if (GenomeRenderer != null)
                     {
                         GenomeRenderer.Genome = neat.FittestGenome;
