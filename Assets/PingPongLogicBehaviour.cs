@@ -36,10 +36,9 @@ namespace KDS
 
         public void Start()
         {
-            int rounds = 100;
             Task.Run(() =>
             {
-                while (rounds > 0)
+                for (;;)
                 {
                     neat.Evaluate(SimulateNetwork);
                     currentInformationText = string.Format(
@@ -51,7 +50,6 @@ namespace KDS
                         GenomeRenderer.Genome = neat.FittestGenome;
                     }
                     neat.BreedNextGeneration();
-                    rounds--;
                 }
             });
         }
