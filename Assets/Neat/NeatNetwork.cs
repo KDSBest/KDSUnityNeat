@@ -25,7 +25,7 @@ namespace KDS.Neat
 
         public NeatNetwork(int inNodes, int outNodes) : this(new DefaultNeatConfiguration(), new InnovationCounter(),
             new DefaultRandomizer(), new DefaultSameSpeciesDetectionCalculation(),
-            new SurvivalOfTheFittest50PercentOfAllGenomesBreedingSelectionStrategy(), inNodes, outNodes)
+            new SurvivalOfTheFittestOfAllGenomesBreedingSelectionStrategy(), inNodes, outNodes)
         {
 
         }

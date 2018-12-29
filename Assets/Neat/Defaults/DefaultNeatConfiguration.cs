@@ -94,7 +94,7 @@
 
         public int PopulationSize
         {
-            get { return 1000; }
+            get { return 500; }
         }
 
         public float Epsilon
